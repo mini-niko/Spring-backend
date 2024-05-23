@@ -1,4 +1,4 @@
-package br.minikoapi.entities;
+package br.minikoapi.entities.user;
 
 public enum UserRole {
     ADMIN,
