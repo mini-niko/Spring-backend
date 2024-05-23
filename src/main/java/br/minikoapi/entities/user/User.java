@@ -41,13 +41,13 @@ public class User implements IValidator {
     @Enumerated(EnumType.STRING)
     private UserRole userRole;
 
-    private LocalDateTime timestamp;
+    private LocalDateTime createdTimestamp;
 
     public User(UserDTO data) {
         this.name = data.name();
         this.email = data.email();
         this.password = data.password();
         this.userRole = UserRole.ADMIN;
-        this.timestamp = LocalDateTime.now();
+        this.createdTimestamp = LocalDateTime.now();
     }
 }
