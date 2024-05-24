@@ -3,6 +3,7 @@ package br.minikoapi.infra;
 import br.minikoapi.dtos.ExceptionDTO;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -18,8 +19,8 @@ public class ControllerExceptionHandler {
     }
 
     @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity thread404(Exception exception) {
-        return ResponseEntity.notFound().build();
+    public ResponseEntity threadNotFoundEntity(Exception exception) {
+        return ResponseEntity.status(HttpStatus.valueOf(404)).build();
     }
 
     @ExceptionHandler(Exception.class)

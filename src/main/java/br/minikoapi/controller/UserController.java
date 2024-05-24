@@ -26,6 +26,6 @@ public class UserController {
     public ResponseEntity<User> findUser(@RequestParam String id) throws Exception {
         User user = userService.findUserById(id);
 
-        return new ResponseEntity<>(user, HttpStatus.FOUND);
+        return ResponseEntity.ok(user);
     }
 }

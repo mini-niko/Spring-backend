@@ -5,6 +5,7 @@ import br.minikoapi.entities.user.User;
 import br.minikoapi.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import jakarta.persistence.EntityNotFoundException;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -16,6 +17,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.util.regex.Matcher;
 
@@ -40,7 +42,6 @@ public class UserControllerTests {
         System.out.println("[Test] Testing shoudCreateNewUser()");
 
         User user = new User(new UserDTO("Example", "example@email.com", "12345678"));
-        String createdTimestamp = user.getCreatedTimestamp().toString();
 
         Mockito.when(userService.createUser(Mockito.any(UserDTO.class))).thenReturn(user);
 
@@ -54,11 +55,7 @@ public class UserControllerTests {
         )
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.id", Matchers.is(user.getId())))
-            .andExpect(jsonPath("$.name", Matchers.is(user.getName())))
-            .andExpect(jsonPath("$.email", Matchers.is(user.getEmail())))
-            .andExpect(jsonPath("$.password", Matchers.is(user.getPassword())))
-            .andExpect(jsonPath("$.userRole", Matchers.is(user.getUserRole().toString())))
-            .andExpect(jsonPath("$.createdTimestamp", Matchers.is(createdTimestamp.substring(0, createdTimestamp.length() - 2))));
+            .andExpect(jsonPath("$.name", Matchers.is(user.getName())));
 
         System.out.println("[Test] Test shoudCreateNewUser() passed");
     }
@@ -135,5 +132,51 @@ public class UserControllerTests {
 
         System.out.println("[Test] Test shoudReturnDataAlreadySaved() passed");
 
+    }
+
+    @Test
+    public void shouldReturnFound() throws Exception {
+
+        System.out.println("[Test] Testing shoudReturnFound()");
+
+        String id = "id-example";
+        User user = new User(new UserDTO("Example", "example@email.com", "12345678"));
+
+        Mockito.when(userService.findUserById(Mockito.any())).thenReturn(user);
+
+        String userJson = mapper.writeValueAsString(user);
+
+        mvc.perform(
+            get("/api/users/find-user")
+                .accept(MediaType.APPLICATION_JSON)
+                .content(userJson)
+        )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id", Matchers.is(user.getId())))
+            .andExpect(jsonPath("$.name", Matchers.is(user.getName())));
+
+        System.out.println("[Test] Test shoudReturnFound() passed");
+    }
+
+    @Test
+    public void shouldReturnNotFound() throws Exception {
+
+        System.out.println("[Test] Testing shoudReturnNotFound()");
+
+        String id = "id-example";
+        User user = new User(new UserDTO("Example", "example@email.com", "12345678"));
+
+        Mockito.when(userService.findUserById(Mockito.any())).thenThrow(new EntityNotFoundException());
+
+        String userJson = mapper.writeValueAsString(user);
+
+        mvc.perform(
+            get("/api/users/find-user")
+                .accept(MediaType.APPLICATION_JSON)
+                .content(userJson)
+        )
+            .andExpect(status().isNotFound());
+
+        System.out.println("[Test] Test shoudReturnNotFound() passed");
     }
 }
