@@ -30,7 +30,7 @@ public class UserController {
     public ResponseEntity<User> createUser(@RequestBody @Valid UserRegisterDTO data) throws Exception {
         User newUser = userService.createUser(data);
 
-        return login(new UserLoginDTO(data.email(), data.password()));
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping("/login")
@@ -42,7 +42,7 @@ public class UserController {
 
         String token = tokenService.generateToken((User) auth.getPrincipal());
 
-        return new ResponseEntity<>(HttpStatus.OK);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @GetMapping("/find-user")

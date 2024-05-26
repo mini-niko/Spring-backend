@@ -1,6 +1,6 @@
 package br.minikoapi.controller;
 
-import br.minikoapi.dtos.UserDTO;
+import br.minikoapi.dtos.user.UserRegisterDTO;
 import br.minikoapi.entities.user.User;
 import br.minikoapi.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,17 +15,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-
-import java.util.regex.Matcher;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 public class UserControllerTests {
 
     @Autowired
@@ -41,21 +39,19 @@ public class UserControllerTests {
 
         System.out.println("[Test] Testing shoudCreateNewUser()");
 
-        User user = new User(new UserDTO("Example", "example@email.com", "12345678"));
+        UserRegisterDTO user = new UserRegisterDTO("Example", "example@email.com", "12345678");
 
-        Mockito.when(userService.createUser(Mockito.any(UserDTO.class))).thenReturn(user);
+        Mockito.when(userService.createUser(Mockito.any(UserRegisterDTO.class))).thenReturn(new User(user));
 
         String userJson = mapper.writeValueAsString(user);
 
         mvc.perform(
-            post("/api/users/create-user")
+            post("/api/users/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(userJson)
                 .accept(MediaType.APPLICATION_JSON)
         )
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id", Matchers.is(user.getId())))
-            .andExpect(jsonPath("$.name", Matchers.is(user.getName())));
+            .andExpect(status().isCreated());
 
         System.out.println("[Test] Test shoudCreateNewUser() passed");
     }
@@ -65,18 +61,18 @@ public class UserControllerTests {
 
         System.out.println("[Test] Testing shoudReturnInvalidFields()");
 
-        User userNameWrong = new User(new UserDTO("Ex", "example@email.com", "12345678"));
-        User userEmailWrong = new User(new UserDTO("Example", "example", "12345678"));
-        User userPasswordWrong = new User(new UserDTO("Example", "example@email.com", "123"));
+        UserRegisterDTO userNameWrong = new UserRegisterDTO("Ex", "example@email.com", "12345678");
+        UserRegisterDTO userEmailWrong = new UserRegisterDTO("Example", "example", "12345678");
+        UserRegisterDTO userPasswordWrong = new UserRegisterDTO("Example", "example@email.com", "123");
 
-        Mockito.when(userService.createUser(Mockito.any(UserDTO.class))).thenThrow(new Exception("Invalid fields"));
+        Mockito.when(userService.createUser(Mockito.any(UserRegisterDTO.class))).thenThrow(new Exception("Invalid fields"));
 
         String userJsonNameWrong = mapper.writeValueAsString(userNameWrong);
         String userJsonEmailWrong = mapper.writeValueAsString(userEmailWrong);
         String userJsonPasswordWrong = mapper.writeValueAsString(userPasswordWrong);
 
         mvc.perform(
-            post("/api/users/create-user")
+            post("/api/users/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(userJsonNameWrong)
                 .accept(MediaType.APPLICATION_JSON)
@@ -86,7 +82,7 @@ public class UserControllerTests {
             .andExpect(jsonPath("$.message", Matchers.is("Invalid fields")));
 
         mvc.perform(
-            post("/api/users/create-user")
+            post("/api/users/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(userJsonEmailWrong)
                 .accept(MediaType.APPLICATION_JSON)
@@ -96,7 +92,7 @@ public class UserControllerTests {
             .andExpect(jsonPath("$.message", Matchers.is("Invalid fields")));
 
         mvc.perform(
-            post("/api/users/create-user")
+            post("/api/users/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(userJsonPasswordWrong)
                 .accept(MediaType.APPLICATION_JSON)
@@ -114,14 +110,14 @@ public class UserControllerTests {
 
         System.out.println("[Test] Testing shoudReturnDataAlreadySaved()");
 
-        User user = new User(new UserDTO("Example", "example@email.com", "12345678"));
+        UserRegisterDTO user = new UserRegisterDTO("Example", "example@email.com", "12345678");
 
-        Mockito.when(userService.createUser(Mockito.any(UserDTO.class))).thenThrow(new DataIntegrityViolationException("Data already saved"));
+        Mockito.when(userService.createUser(Mockito.any(UserRegisterDTO.class))).thenThrow(new DataIntegrityViolationException("Data already saved"));
 
         String userJson = mapper.writeValueAsString(user);
 
         mvc.perform(
-            post("/api/users/create-user")
+            post("/api/users/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(userJson)
                 .accept(MediaType.APPLICATION_JSON)
@@ -140,20 +136,17 @@ public class UserControllerTests {
         System.out.println("[Test] Testing shoudReturnFound()");
 
         String id = "id-example";
-        User user = new User(new UserDTO("Example", "example@email.com", "12345678"));
+        UserRegisterDTO user = new UserRegisterDTO("Example", "example@email.com", "12345678");
 
-        Mockito.when(userService.findUserById(Mockito.any())).thenReturn(user);
-
-        String userJson = mapper.writeValueAsString(user);
+        Mockito.when(userService.findUserById(Mockito.any())).thenReturn(new User(user));
 
         mvc.perform(
             get("/api/users/find-user")
-                .accept(MediaType.APPLICATION_JSON)
-                .content(userJson)
+                    .param("id", id)
         )
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id", Matchers.is(user.getId())))
-            .andExpect(jsonPath("$.name", Matchers.is(user.getName())));
+            .andExpect(jsonPath("$.name", Matchers.is(user.name())))
+            .andExpect(jsonPath("$.email", Matchers.is(user.email())));
 
         System.out.println("[Test] Test shoudReturnFound() passed");
     }
@@ -164,16 +157,13 @@ public class UserControllerTests {
         System.out.println("[Test] Testing shoudReturnNotFound()");
 
         String id = "id-example";
-        User user = new User(new UserDTO("Example", "example@email.com", "12345678"));
+        UserRegisterDTO user = new UserRegisterDTO("Example", "example@email.com", "12345678");
 
         Mockito.when(userService.findUserById(Mockito.any())).thenThrow(new EntityNotFoundException());
 
-        String userJson = mapper.writeValueAsString(user);
-
         mvc.perform(
-            get("/api/users/find-user")
-                .accept(MediaType.APPLICATION_JSON)
-                .content(userJson)
+            get("/api/users/find-user?id=" + id)
+                    .param("id", id)
         )
             .andExpect(status().isNotFound());
 
